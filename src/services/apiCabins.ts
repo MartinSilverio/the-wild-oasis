@@ -1,4 +1,4 @@
-import { StringifiedData } from '../utils/helpers';
+import { StringifiedData, assertIsDefined } from '../utils/helpers';
 import supabase, { supabaseUrl } from './supabase';
 import { z } from 'zod';
 
@@ -14,13 +14,15 @@ const cabinSchema = z.object({
 });
 
 export type CabinType = z.infer<typeof cabinSchema>;
-export type CabinSubmit = Omit<CabinType, 'id' | 'created_at'>;
-export type CabinSubmitNoImage = Omit<CabinType, 'id' | 'created_at' | 'image'>;
-export type CabinSubmitWithImageList = StringifiedData<CabinSubmitNoImage> & {
-    image: FileList;
+export type CabinSubmitType = StringifiedData<
+    Omit<CabinType, 'id' | 'created_at' | 'image'>
+> & {
+    image: FileList | string | null;
 };
-export type CabinSubmitWithImage = StringifiedData<CabinSubmitNoImage> & {
-    image: File;
+export type CreateEditCabinData = StringifiedData<
+    Omit<CabinType, 'id' | 'created_at' | 'image'>
+> & {
+    image: File | string | null;
 };
 
 const cabinArraySchema = z.array(cabinSchema);
@@ -36,37 +38,59 @@ export async function getCabins() {
     return cabinArraySchema.parse(data);
 }
 
-export async function createCabin(newCabin: CabinSubmitWithImage) {
-    const imageName = `${Math.random()}-${newCabin.image.name}`.replace(
-        '/',
-        ''
-    );
-    const imagePath = `${supabaseUrl}/storage/v1/object/public/cabin-images/${imageName}`;
+export async function createEditCabin(
+    newCabin: CreateEditCabinData,
+    id?: number
+) {
+    console.log(newCabin);
+    const hasImagePath =
+        typeof newCabin.image === 'string' &&
+        newCabin.image.startsWith(supabaseUrl);
+
+    let imagePath;
+    let imageName;
+
+    if (hasImagePath) {
+        imagePath = newCabin.image;
+    } else if (newCabin.image instanceof File) {
+        imageName = `${Math.random()}-${newCabin.image.name}`.replace('/', '');
+        imagePath = `${supabaseUrl}/storage/v1/object/public/cabin-images/${imageName}`;
+    }
+    const query = supabase.from('cabins');
+    let builder;
 
     //1. Create cabin
-    const { data, error } = await supabase
-        .from('cabins')
-        .insert([{ ...newCabin, image: imagePath }])
-        .select();
+    if (!id) {
+        builder = query.insert([{ ...newCabin, image: imagePath }]);
+    }
+
+    if (id) {
+        builder = query.update({ ...newCabin, image: imagePath }).eq('id', id);
+    }
+
+    assertIsDefined<typeof builder>(builder);
+    const { data, error } = await builder.select().single();
 
     if (error) {
         console.log(error);
         throw new Error('Could not create cabin');
     }
 
-    //2. Upload image
-    const { error: storageError } = await supabase.storage
-        .from('cabin-images')
-        .upload(imageName, newCabin.image);
+    //2. Upload image if user is uploading an image
+    if (newCabin.image instanceof File && imageName) {
+        const { error: storageError } = await supabase.storage
+            .from('cabin-images')
+            .upload(imageName, newCabin.image);
 
-    //3. Delete cabin if there was an error uploading the image
-    if (storageError) {
-        const parsedCabinData = cabinSchema.parse(data);
-        await supabase.from('cabins').delete().eq('id', parsedCabinData.id);
-        console.log(error);
-        throw new Error(
-            'Could image could not be uploaded and the cabin was not created'
-        );
+        //3. Delete cabin if there was an error uploading the image
+        if (storageError) {
+            const parsedCabinData = cabinSchema.parse(data);
+            await supabase.from('cabins').delete().eq('id', parsedCabinData.id);
+            console.log(error);
+            throw new Error(
+                'Could image could not be uploaded and the cabin was not created'
+            );
+        }
     }
 
     console.log(data);

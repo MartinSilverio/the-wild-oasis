@@ -1,17 +1,19 @@
 import styled from 'styled-components';
+import { FieldErrors, useForm } from 'react-hook-form';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 
 import Input from '../../ui/Input';
 import Form from '../../ui/Form';
 import Button from '../../ui/Button';
 import FileInput from '../../ui/FileInput';
 import Textarea from '../../ui/Textarea';
-import { FieldErrors, useForm } from 'react-hook-form';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-    CabinSubmitWithImageList,
-    createCabin,
+    CabinSubmitType,
+    CabinType,
+    CreateEditCabinData,
+    createEditCabin,
 } from '../../services/apiCabins';
-import toast from 'react-hot-toast';
 import FormRow from '../../ui/FormRow';
 
 const StyledForm = styled.div`
@@ -41,16 +43,36 @@ const StyledForm = styled.div`
     }
 `;
 
-function CreateCabinForm() {
+function convertToSubmittableForm(cabin: Partial<CabinType>) {
+    return {
+        ...cabin,
+        discount: cabin.discount?.toString(),
+        maxCapacity: cabin.maxCapacity?.toString(),
+        regularPrice: cabin.regularPrice?.toString(),
+    };
+}
+
+function CreateCabinForm({
+    cabinToEdit = {},
+}: {
+    cabinToEdit: Partial<CabinType>;
+}) {
+    const { id: editId, ...editValues } = cabinToEdit;
+    const isEditSession = editId !== undefined;
+
     const queryClient = useQueryClient();
     const { register, handleSubmit, reset, getValues, formState } =
-        useForm<CabinSubmitWithImageList>();
+        useForm<CabinSubmitType>({
+            defaultValues: isEditSession
+                ? convertToSubmittableForm(editValues)
+                : {},
+        });
 
     const { errors } = formState;
     console.group(errors);
 
-    const { mutate, isPending } = useMutation({
-        mutationFn: createCabin,
+    const { mutate: createCabin, isPending: isCreating } = useMutation({
+        mutationFn: createEditCabin,
         onSuccess: () => {
             toast.success('New cabin successfully created');
             queryClient.invalidateQueries({ queryKey: ['cabins'] });
@@ -59,9 +81,39 @@ function CreateCabinForm() {
         onError: (err) => toast.error(err.message),
     });
 
-    function onSubmit(data: CabinSubmitWithImageList) {
+    const { mutate: editCabin, isPending: isEditing } = useMutation({
+        mutationFn: ({
+            newCabinData,
+            id,
+        }: {
+            newCabinData: CreateEditCabinData;
+            id: number;
+        }) => createEditCabin(newCabinData, id),
+        onSuccess: () => {
+            toast.success('Cabin successfully edited');
+            queryClient.invalidateQueries({ queryKey: ['cabins'] });
+            reset(getValues());
+        },
+        onError: (err) => toast.error(err.message),
+    });
+
+    const isPending = isCreating || isEditing;
+
+    function onSubmit(data: CabinSubmitType) {
         console.log(data);
-        mutate({ ...data, image: data.image[0] });
+        const image =
+            data.image instanceof FileList ? data.image[0] : data.image;
+
+        if (isEditSession) {
+            if (typeof image === 'string') {
+                editCabin({
+                    newCabinData: { ...data, image },
+                    id: editId,
+                });
+            }
+        } else {
+            createCabin({ ...data, image });
+        }
     }
 
     function onError(errors: FieldErrors) {
@@ -152,7 +204,9 @@ function CreateCabinForm() {
                     disabled={isPending}
                     accept="image/*"
                     {...register('image', {
-                        required: 'This field is required',
+                        required: isEditSession
+                            ? false
+                            : 'This field is required',
                     })}
                 />
             </FormRow>
@@ -162,7 +216,9 @@ function CreateCabinForm() {
                 <Button variation="secondary" type="reset">
                     Cancel
                 </Button>
-                <Button disabled={isPending}>Add cabin</Button>
+                <Button disabled={isPending}>
+                    {isEditSession ? 'Edit cabin' : 'Add cabin'}
+                </Button>
             </StyledForm>
         </Form>
     );
