@@ -1,20 +1,17 @@
 import styled from 'styled-components';
 import { FieldErrors, useForm } from 'react-hook-form';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import toast from 'react-hot-toast';
+
+import { CabinSubmitType, CabinType } from '../../services/apiCabins';
 
 import Input from '../../ui/Input';
 import Form from '../../ui/Form';
 import Button from '../../ui/Button';
 import FileInput from '../../ui/FileInput';
 import Textarea from '../../ui/Textarea';
-import {
-    CabinSubmitType,
-    CabinType,
-    CreateEditCabinData,
-    createEditCabin,
-} from '../../services/apiCabins';
 import FormRow from '../../ui/FormRow';
+
+import { useCreateCabin } from './useCreateCabin';
+import { useEditCabin } from './useEditCabin';
 
 const StyledForm = styled.div`
     display: grid;
@@ -60,7 +57,6 @@ function CreateCabinForm({
     const { id: editId, ...editValues } = cabinToEdit;
     const isEditSession = editId !== undefined;
 
-    const queryClient = useQueryClient();
     const { register, handleSubmit, reset, getValues, formState } =
         useForm<CabinSubmitType>({
             defaultValues: isEditSession
@@ -69,55 +65,49 @@ function CreateCabinForm({
         });
 
     const { errors } = formState;
-    console.group(errors);
+    // console.group(errors);
 
-    const { mutate: createCabin, isPending: isCreating } = useMutation({
-        mutationFn: createEditCabin,
-        onSuccess: () => {
-            toast.success('New cabin successfully created');
-            queryClient.invalidateQueries({ queryKey: ['cabins'] });
-            reset();
-        },
-        onError: (err) => toast.error(err.message),
-    });
-
-    const { mutate: editCabin, isPending: isEditing } = useMutation({
-        mutationFn: ({
-            newCabinData,
-            id,
-        }: {
-            newCabinData: CreateEditCabinData;
-            id: number;
-        }) => createEditCabin(newCabinData, id),
-        onSuccess: () => {
-            toast.success('Cabin successfully edited');
-            queryClient.invalidateQueries({ queryKey: ['cabins'] });
-            reset(getValues());
-        },
-        onError: (err) => toast.error(err.message),
-    });
+    const { createCabin, isCreating } = useCreateCabin();
+    const { editCabin, isEditing } = useEditCabin();
 
     const isPending = isCreating || isEditing;
 
     function onSubmit(data: CabinSubmitType) {
-        console.log(data);
+        // console.log(data);
         const image =
             data.image instanceof FileList ? data.image[0] : data.image;
 
         if (isEditSession) {
             if (typeof image === 'string') {
-                editCabin({
-                    newCabinData: { ...data, image },
-                    id: editId,
-                });
+                editCabin(
+                    {
+                        newCabinData: { ...data, image },
+                        id: editId,
+                    },
+                    {
+                        onSuccess: (data) => {
+                            console.log(data);
+                            reset(getValues());
+                        },
+                    }
+                );
             }
         } else {
-            createCabin({ ...data, image });
+            createCabin(
+                { ...data, image },
+                {
+                    onSuccess: (data) => {
+                        //Data is the value returned from the callbackFn
+                        console.log(data);
+                        reset();
+                    },
+                }
+            );
         }
     }
 
     function onError(errors: FieldErrors) {
-        console.log(errors);
+        console.error(errors);
     }
 
     return (
@@ -175,7 +165,7 @@ function CreateCabinForm({
                     {...register('discount', {
                         required: 'This field is required',
                         validate: (value) => {
-                            console.log(Number(getValues().regularPrice));
+                            // console.log(Number(getValues().regularPrice));
                             return (
                                 Number(value) <
                                     Number(getValues().regularPrice) ||

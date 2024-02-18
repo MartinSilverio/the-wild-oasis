@@ -42,7 +42,7 @@ export async function createEditCabin(
     newCabin: CreateEditCabinData,
     id?: number
 ) {
-    console.log(newCabin);
+    // console.log(newCabin);
     const hasImagePath =
         typeof newCabin.image === 'string' &&
         newCabin.image.startsWith(supabaseUrl);
@@ -72,7 +72,7 @@ export async function createEditCabin(
     const { data, error } = await builder.select().single();
 
     if (error) {
-        console.log(error);
+        console.error(error);
         throw new Error('Could not create cabin');
     }
 
@@ -86,14 +86,14 @@ export async function createEditCabin(
         if (storageError) {
             const parsedCabinData = cabinSchema.parse(data);
             await supabase.from('cabins').delete().eq('id', parsedCabinData.id);
-            console.log(error);
+            // console.log(error);
             throw new Error(
                 'Could image could not be uploaded and the cabin was not created'
             );
         }
     }
 
-    console.log(data);
+    // console.log(data);
     return data;
 }
 
@@ -101,7 +101,7 @@ export async function deleteCabin(id: number) {
     const { data, error } = await supabase.from('cabins').delete().eq('id', id);
 
     if (error) {
-        console.log(error);
+        console.error(error);
         throw new Error('Could not delete cabin');
     }
 

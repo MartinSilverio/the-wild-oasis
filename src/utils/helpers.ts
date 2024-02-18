@@ -1,5 +1,4 @@
 import { formatDistance, parseISO, differenceInDays } from 'date-fns';
-import { unknown } from 'zod';
 
 // We want to make this function work for both Date objects and strings (which come from Supabase)
 export const subtractDates = (dateStr1: string, dateStr2: string) =>
@@ -38,5 +37,11 @@ export function assertIsDefined<T>(
 ): asserts obj is Exclude<T, undefined> {
     if (obj === undefined) {
         throw new Error('Object should not be undefined');
+    }
+}
+
+export function assertIsString(obj: unknown): asserts obj is string {
+    if (typeof obj !== 'string') {
+        throw new Error('Type should be string');
     }
 }
