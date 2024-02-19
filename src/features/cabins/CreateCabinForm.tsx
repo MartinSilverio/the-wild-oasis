@@ -51,8 +51,10 @@ function convertToSubmittableForm(cabin: Partial<CabinType>) {
 
 function CreateCabinForm({
     cabinToEdit = {},
+    onCloseModal,
 }: {
-    cabinToEdit: Partial<CabinType>;
+    cabinToEdit?: Partial<CabinType>;
+    onCloseModal?: () => void;
 }) {
     const { id: editId, ...editValues } = cabinToEdit;
     const isEditSession = editId !== undefined;
@@ -88,6 +90,7 @@ function CreateCabinForm({
                         onSuccess: (data) => {
                             console.log(data);
                             reset(getValues());
+                            onCloseModal?.();
                         },
                     }
                 );
@@ -100,6 +103,7 @@ function CreateCabinForm({
                         //Data is the value returned from the callbackFn
                         console.log(data);
                         reset();
+                        onCloseModal?.();
                     },
                 }
             );
@@ -111,7 +115,10 @@ function CreateCabinForm({
     }
 
     return (
-        <Form onSubmit={handleSubmit(onSubmit, onError)}>
+        <Form
+            onSubmit={handleSubmit(onSubmit, onError)}
+            typeof={onCloseModal ? 'modal' : 'regular'}
+        >
             <FormRow label="Cabin name" error={errors.name?.message}>
                 <Input
                     type="text"
@@ -203,7 +210,11 @@ function CreateCabinForm({
 
             <StyledForm>
                 {/* type is an HTML attribute! */}
-                <Button variation="secondary" type="reset">
+                <Button
+                    variation="secondary"
+                    type="reset"
+                    onClick={() => onCloseModal?.()}
+                >
                     Cancel
                 </Button>
                 <Button disabled={isPending}>
