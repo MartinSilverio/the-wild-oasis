@@ -1,16 +1,40 @@
+import { useSearchParams } from 'react-router-dom';
+
 import Spinner from '../../ui/Spinner';
 import CabinRow from './CabinRow';
 import { useCabins } from './useCabins';
 import Table from '../../ui/Table';
 import { CabinType } from '../../services/apiCabins';
 import Menus from '../../ui/Menus';
+import { CabinSortTypes } from './CabinTableOperations';
 
 function CabinTable() {
     const { cabins, isPending } = useCabins();
-
-    // console.log(cabins);
+    const [searchParams] = useSearchParams();
 
     if (isPending) return <Spinner />;
+
+    let filteredCabins: CabinType[] = [];
+
+    //Filter
+    const filterValue = searchParams.get('discount') ?? 'all';
+
+    if (filterValue === 'all' && cabins) filteredCabins = cabins;
+    if (filterValue === 'no-discount' && cabins)
+        filteredCabins = cabins?.filter((cabin) => cabin.discount === 0);
+    if (filterValue === 'with-discount' && cabins)
+        filteredCabins = cabins?.filter((cabin) => cabin.discount > 0);
+
+    //Sort
+    const sortBy = searchParams.get('sortBy') ?? 'startDate-asc';
+    const [field, direction]: [CabinSortTypes, 'asc' | 'desc'] = sortBy.split(
+        '-'
+    ) as [CabinSortTypes, 'asc' | 'desc'];
+
+    const modifier = direction === 'asc' ? 1 : -1;
+    const sortedCabins = filteredCabins.sort((a, b) => {
+        return modifier * (+a[field] - +b[field]);
+    });
 
     return (
         <Menus>
@@ -24,7 +48,7 @@ function CabinTable() {
                     <div></div>
                 </Table.Header>
                 <Table.Body<CabinType>
-                    data={cabins}
+                    data={sortedCabins}
                     render={(cabin) => (
                         <CabinRow cabin={cabin} key={cabin.id} />
                     )}
