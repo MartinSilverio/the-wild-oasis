@@ -67,7 +67,6 @@ function CreateCabinForm({
         });
 
     const { errors } = formState;
-    // console.group(errors);
 
     const { createCabin, isCreating } = useCreateCabin();
     const { editCabin, isEditing } = useEditCabin();
@@ -75,7 +74,6 @@ function CreateCabinForm({
     const isPending = isCreating || isEditing;
 
     function onSubmit(data: CabinSubmitType) {
-        // console.log(data);
         const image =
             data.image instanceof FileList ? data.image[0] : data.image;
 
@@ -211,7 +209,7 @@ function CreateCabinForm({
             <StyledForm>
                 {/* type is an HTML attribute! */}
                 <Button
-                    variation="secondary"
+                    $variation="secondary"
                     type="reset"
                     onClick={() => onCloseModal?.()}
                 >

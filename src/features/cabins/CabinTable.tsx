@@ -7,6 +7,7 @@ import Table from '../../ui/Table';
 import { CabinType } from '../../services/apiCabins';
 import Menus from '../../ui/Menus';
 import { CabinSortTypes } from './CabinTableOperations';
+import Empty from '../../ui/Empty';
 
 function CabinTable() {
     const { cabins, isPending } = useCabins();
@@ -15,6 +16,8 @@ function CabinTable() {
     if (isPending) return <Spinner />;
 
     let filteredCabins: CabinType[] = [];
+
+    if (!cabins || !cabins.length) return <Empty resource="cabins" />;
 
     //Filter
     const filterValue = searchParams.get('discount') ?? 'all';

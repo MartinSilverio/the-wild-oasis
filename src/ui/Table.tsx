@@ -2,7 +2,7 @@ import { ReactNode, createContext, useContext } from 'react';
 import styled from 'styled-components';
 
 interface TableContextType {
-    columns: string;
+    $columns: string;
 }
 
 const StyledTable = styled.div`
@@ -16,7 +16,7 @@ const StyledTable = styled.div`
 
 const CommonRow = styled.div<TableContextType>`
     display: grid;
-    grid-template-columns: ${(props) => props.columns};
+    grid-template-columns: ${(props) => props.$columns};
     column-gap: 2.4rem;
     align-items: center;
     transition: none;
@@ -88,7 +88,7 @@ function Table({
     return (
         <TableContext.Provider
             value={{
-                columns,
+                $columns: columns,
             }}
         >
             <StyledTable role="table">{children}</StyledTable>
@@ -97,18 +97,18 @@ function Table({
 }
 
 function Header({ children }: { children: ReactNode }) {
-    const { columns } = useTableContext();
+    const { $columns: columns } = useTableContext();
     return (
-        <StyledHeader role="row" columns={columns} as="header">
+        <StyledHeader role="row" $columns={columns} as="header">
             {children}
         </StyledHeader>
     );
 }
 
 function Row({ children }: { children: ReactNode }) {
-    const { columns } = useTableContext();
+    const { $columns: columns } = useTableContext();
     return (
-        <StyledRow role="row" columns={columns}>
+        <StyledRow role="row" $columns={columns}>
             {children}
         </StyledRow>
     );
@@ -121,7 +121,8 @@ function Body<T>({
     data: T[] | undefined;
     render: (item: T) => ReactNode;
 }) {
-    if (!data) return <Empty>No data to show at the moment</Empty>;
+    if (!data || data.length === 0)
+        return <Empty>No data to show at the moment</Empty>;
 
     return <StyledBody role="row">{data.map(render)}</StyledBody>;
 }

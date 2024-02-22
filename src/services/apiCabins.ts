@@ -2,7 +2,7 @@ import { StringifiedData, assertIsDefined } from '../utils/helpers';
 import supabase, { supabaseUrl } from './supabase';
 import { z } from 'zod';
 
-const cabinSchema = z.object({
+export const cabinSchema = z.object({
     id: z.number(),
     created_at: z.string(),
     name: z.string(),
