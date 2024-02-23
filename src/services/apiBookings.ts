@@ -4,6 +4,7 @@ import supabase from './supabase';
 import { cabinSchema } from './apiCabins';
 import { guestSchema } from './apiGuests';
 import { LabelValue } from '../utils/general.types';
+import { PAGE_SIZE } from '../utils/constants';
 
 const bookingSchema = z.object({
     id: z.number(),
@@ -25,12 +26,20 @@ const bookingSchema = z.object({
     observations: z.string().nullable(),
     cabinId: z.number(),
     guestId: z.number(),
+});
+
+const getBookingsSchema = bookingSchema.extend({
     cabins: cabinSchema.pick({ name: true }),
     guests: guestSchema.pick({ fullName: true, email: true }),
 });
 
+const getBookingSchema = bookingSchema.extend({
+    cabins: cabinSchema,
+    guests: guestSchema,
+});
+
 const getBookingsArraySchema = z.array(
-    bookingSchema.pick({
+    getBookingsSchema.pick({
         id: true,
         created_at: true,
         startDate: true,
@@ -43,7 +52,10 @@ const getBookingsArraySchema = z.array(
         guests: true,
     })
 );
+
+export type BookingType = z.infer<typeof bookingSchema>;
 export type GetBookingsType = z.infer<typeof getBookingsArraySchema>[number];
+export type GetBookingType = z.infer<typeof getBookingSchema>;
 export type AllowableQueryMethods = 'eq' | 'lte' | 'gte';
 export interface FilterAndSort {
     filter:
@@ -55,13 +67,15 @@ export interface FilterAndSort {
         field: string;
         direction: string;
     };
+    page: number;
 }
 
-export async function getBookings({ filter, sortBy }: FilterAndSort) {
+export async function getBookings({ filter, sortBy, page }: FilterAndSort) {
     let query = supabase
         .from('bookings')
         .select(
-            'id, created_at, startDate, endDate, numGuests, numNights, status, totalPrice, cabins(name), guests(fullName, email)'
+            'id, created_at, startDate, endDate, numGuests, numNights, status, totalPrice, cabins(name), guests(fullName, email)',
+            { count: 'exact' }
         );
 
     if (filter) {
@@ -74,14 +88,20 @@ export async function getBookings({ filter, sortBy }: FilterAndSort) {
         });
     }
 
-    const { data, error } = await query;
+    if (page) {
+        const from = PAGE_SIZE * (page - 1);
+        const to = from + PAGE_SIZE - 1;
+        query = query.range(from, to);
+    }
+
+    const { data, error, count } = await query;
 
     if (error) {
         console.error(error);
         throw new Error('Could not get bookings');
     }
 
-    return getBookingsArraySchema.parse(data);
+    return { data: getBookingsArraySchema.parse(data), count };
 }
 
 export async function getBooking(id: number) {
@@ -96,7 +116,7 @@ export async function getBooking(id: number) {
         throw new Error('Booking not found');
     }
 
-    return data;
+    return getBookingSchema.parse(data);
 }
 
 // Returns all BOOKINGS that are were created after the given date. Useful to get bookings created in the last 30 days, for example.
@@ -153,7 +173,7 @@ export async function getStaysTodayActivity() {
     return data;
 }
 
-export async function updateBooking(id, obj) {
+export async function updateBooking(id: number, obj: Partial<BookingType>) {
     const { data, error } = await supabase
         .from('bookings')
         .update(obj)
@@ -165,10 +185,10 @@ export async function updateBooking(id, obj) {
         console.error(error);
         throw new Error('Booking could not be updated');
     }
-    return data;
+    return bookingSchema.parse(data);
 }
 
-export async function deleteBooking(id) {
+export async function deleteBooking(id: number) {
     // REMEMBER RLS POLICIES
     const { data, error } = await supabase
         .from('bookings')

@@ -35,15 +35,15 @@ const StyledToggle = styled.button`
     }
 `;
 
-const StyledList = styled.ul<{ position: { x: number; y: number } }>`
+const StyledList = styled.ul<{ $position: { x: number; y: number } }>`
     position: fixed;
 
     background-color: var(--color-grey-0);
     box-shadow: var(--shadow-md);
     border-radius: var(--border-radius-md);
 
-    right: ${(props) => props.position.x}px;
-    top: ${(props) => props.position.y}px;
+    right: ${(props) => props.$position.x}px;
+    top: ${(props) => props.$position.y}px;
 `;
 
 const StyledButton = styled.button`
@@ -149,7 +149,7 @@ function List({ id, children }: { id: number; children: ReactNode }) {
     if (position === null) return null;
 
     return createPortal(
-        <StyledList ref={ref} position={{ x: position.x, y: position.y }}>
+        <StyledList ref={ref} $position={{ x: position.x, y: position.y }}>
             {children}
         </StyledList>,
         document.body
