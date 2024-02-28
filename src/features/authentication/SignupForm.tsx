@@ -103,6 +103,7 @@ function SignUpForm() {
                         $variation="secondary"
                         type="reset"
                         disabled={isSigningUp}
+                        onClick={() => reset()}
                     >
                         Cancel
                     </Button>

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import supabase from './supabase';
+import supabase, { supabaseUrl } from './supabase';
 
 export const fullNameSchema = z.string();
 export const avatarSchema = z.string();
@@ -13,6 +13,14 @@ export interface SignupObject {
     fullName: string;
     email: string;
     password: string;
+}
+
+export interface UpdateObject {
+    password?: string;
+    data?: {
+        fullName?: string;
+    };
+    avatar?: File;
 }
 
 export async function signUp({ fullName, email, password }: SignupObject) {
@@ -65,4 +73,45 @@ export async function logout() {
     const { error } = await supabase.auth.signOut();
 
     if (error) throw new Error(error.message);
+}
+
+export async function updateCurrentUser({
+    password,
+    fullName,
+    avatar,
+}: Pick<UpdateObject, 'password' | 'avatar'> & { fullName?: string }) {
+    //1. Update password or fullname
+    let updateData: UpdateObject = {};
+
+    if (password) updateData = { password };
+    if (fullName) updateData = { data: { fullName } };
+
+    const { data, error } = await supabase.auth.updateUser(updateData);
+
+    if (error) throw new Error(error.message);
+
+    //2. Upload the avatar image
+    const fileName = `avatar-${data.user.id}-${Math.random()}`;
+
+    if (avatar) {
+        const { error: storageError } = await supabase.storage
+            .from('avatars')
+            .upload(fileName, avatar);
+
+        if (storageError) throw new Error(storageError.message);
+
+        //3. Update avatar in the user
+        const { data: finalData, error: finalUpdateError } =
+            await supabase.auth.updateUser({
+                data: {
+                    avatar: `${supabaseUrl}/storage/v1/object/public/avatars/${fileName}`,
+                },
+            });
+
+        if (finalUpdateError) throw new Error(finalUpdateError.message);
+
+        return finalData;
+    }
+
+    return data;
 }

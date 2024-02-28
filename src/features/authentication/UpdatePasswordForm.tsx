@@ -6,27 +6,33 @@ import Input from '../../ui/Input';
 
 import { useUpdateUser } from './useUpdateUser';
 
+interface TUpdatePassword {
+    password: string;
+    passwordConfirm: string;
+}
+
 function UpdatePasswordForm() {
-    const { register, handleSubmit, formState, getValues, reset } = useForm();
+    const { register, handleSubmit, formState, getValues, reset } =
+        useForm<TUpdatePassword>();
     const { errors } = formState;
 
-    const { updateUser, isUpdating } = useUpdateUser();
+    const { updateUser, isUpdatingUser } = useUpdateUser();
 
-    function onSubmit({ password }) {
-        updateUser({ password }, { onSuccess: reset });
+    function onSubmit({ password }: TUpdatePassword) {
+        updateUser({ password }, { onSuccess: () => reset() });
     }
 
     return (
         <Form onSubmit={handleSubmit(onSubmit)}>
             <FormRow
-                label="Password (min 8 characters)"
+                label="New password (min 8 chars)"
                 error={errors?.password?.message}
             >
                 <Input
                     type="password"
                     id="password"
                     autoComplete="current-password"
-                    disabled={isUpdating}
+                    disabled={isUpdatingUser}
                     {...register('password', {
                         required: 'This field is required',
                         minLength: {
@@ -45,7 +51,7 @@ function UpdatePasswordForm() {
                     type="password"
                     autoComplete="new-password"
                     id="passwordConfirm"
-                    disabled={isUpdating}
+                    disabled={isUpdatingUser}
                     {...register('passwordConfirm', {
                         required: 'This field is required',
                         validate: (value) =>
@@ -55,10 +61,16 @@ function UpdatePasswordForm() {
                 />
             </FormRow>
             <FormRow>
-                <Button onClick={reset} type="reset" $variation="secondary">
-                    Cancel
-                </Button>
-                <Button disabled={isUpdating}>Update password</Button>
+                <>
+                    <Button
+                        onClick={() => reset()}
+                        type="reset"
+                        $variation="secondary"
+                    >
+                        Cancel
+                    </Button>
+                    <Button disabled={isUpdatingUser}>Update password</Button>
+                </>
             </FormRow>
         </Form>
     );
