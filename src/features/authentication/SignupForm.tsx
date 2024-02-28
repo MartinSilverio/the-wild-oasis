@@ -3,6 +3,7 @@ import Button from '../../ui/Button';
 import Form from '../../ui/Form';
 import FormRow from '../../ui/FormRow';
 import Input from '../../ui/Input';
+import { useSignUp } from './useSignUp';
 
 // Email regex: /\S+@\S+\.\S+/
 
@@ -14,12 +15,22 @@ interface TLoginForm {
 }
 
 function SignUpForm() {
-    const { register, formState, getValues, handleSubmit } =
+    const { register, formState, getValues, handleSubmit, reset } =
         useForm<TLoginForm>();
+    const { signUp, isSigningUp } = useSignUp();
     const { errors } = formState;
 
-    function onSubmit(data: TLoginForm) {
-        console.log(data);
+    function onSubmit({ fullName, email, password }: TLoginForm) {
+        signUp(
+            {
+                fullName,
+                email,
+                password,
+            },
+            {
+                onSettled: () => reset(),
+            }
+        );
     }
 
     return (
@@ -31,6 +42,7 @@ function SignUpForm() {
                     {...register('fullName', {
                         required: 'This field is required',
                     })}
+                    disabled={isSigningUp}
                 />
             </FormRow>
 
@@ -45,6 +57,7 @@ function SignUpForm() {
                             message: 'Please provide a valid email address',
                         },
                     })}
+                    disabled={isSigningUp}
                 />
             </FormRow>
 
@@ -62,6 +75,7 @@ function SignUpForm() {
                             message: 'Password needs a minimum of 8 characters',
                         },
                     })}
+                    disabled={isSigningUp}
                 />
             </FormRow>
 
@@ -78,16 +92,21 @@ function SignUpForm() {
                             value === getValues().password ||
                             'Passwords need to match',
                     })}
+                    disabled={isSigningUp}
                 />
             </FormRow>
 
             <FormRow>
                 <>
                     {/* type is an HTML attribute! */}
-                    <Button $variation="secondary" type="reset">
+                    <Button
+                        $variation="secondary"
+                        type="reset"
+                        disabled={isSigningUp}
+                    >
                         Cancel
                     </Button>
-                    <Button>Create new user</Button>
+                    <Button disabled={isSigningUp}>Create new user</Button>
                 </>
             </FormRow>
         </Form>
