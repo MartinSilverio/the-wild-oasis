@@ -53,9 +53,35 @@ const getBookingsArraySchema = z.array(
     })
 );
 
+const getBookingsAfterDateSchema = z.array(
+    bookingSchema.pick({
+        created_at: true,
+        extrasPrice: true,
+        totalPrice: true,
+    })
+);
+const getStaysAfterDateSchema = z.array(
+    bookingSchema.extend({
+        guests: guestSchema.pick({ fullName: true }),
+    })
+);
+
+const getStaysTodayActivitySchema = z.array(
+    bookingSchema.extend({
+        guests: guestSchema.pick({
+            fullName: true,
+            nationality: true,
+            countryFlag: true,
+        }),
+    })
+);
+
 export type BookingType = z.infer<typeof bookingSchema>;
 export type GetBookingsType = z.infer<typeof getBookingsArraySchema>[number];
 export type GetBookingType = z.infer<typeof getBookingSchema>;
+export type BookingsAfterDateType = z.infer<typeof getBookingsAfterDateSchema>;
+export type StaysAfterDateType = z.infer<typeof getStaysAfterDateSchema>;
+export type TodayActivitiesType = z.infer<typeof getStaysTodayActivitySchema>;
 export type AllowableQueryMethods = 'eq' | 'lte' | 'gte';
 export interface FilterAndSort {
     filter:
@@ -132,14 +158,13 @@ export async function getBookingsAfterDate(date: string) {
         throw new Error('Bookings could not get loaded');
     }
 
-    return data;
+    return getBookingsAfterDateSchema.parse(data);
 }
 
 // Returns all STAYS that are were created after the given date
 export async function getStaysAfterDate(date: string) {
     const { data, error } = await supabase
         .from('bookings')
-        // .select('*')
         .select('*, guests(fullName)')
         .gte('startDate', date)
         .lte('startDate', getToday());
@@ -149,7 +174,7 @@ export async function getStaysAfterDate(date: string) {
         throw new Error('Bookings could not get loaded');
     }
 
-    return data;
+    return getStaysAfterDateSchema.parse(data);
 }
 
 // Activity means that there is a check in or a check out today
@@ -170,7 +195,7 @@ export async function getStaysTodayActivity() {
         console.error(error);
         throw new Error('Bookings could not get loaded');
     }
-    return data;
+    return getStaysTodayActivitySchema.parse(data);
 }
 
 export async function updateBooking(id: number, obj: Partial<BookingType>) {
