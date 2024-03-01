@@ -85,8 +85,7 @@ function CreateCabinForm({
                         id: editId,
                     },
                     {
-                        onSuccess: (data) => {
-                            console.log(data);
+                        onSuccess: () => {
                             reset(getValues());
                             onCloseModal?.();
                         },
@@ -97,9 +96,7 @@ function CreateCabinForm({
             createCabin(
                 { ...data, image },
                 {
-                    onSuccess: (data) => {
-                        //Data is the value returned from the callbackFn
-                        console.log(data);
+                    onSuccess: () => {
                         reset();
                         onCloseModal?.();
                     },
@@ -170,7 +167,6 @@ function CreateCabinForm({
                     {...register('discount', {
                         required: 'This field is required',
                         validate: (value) => {
-                            // console.log(Number(getValues().regularPrice));
                             return (
                                 Number(value) <
                                     Number(getValues().regularPrice) ||

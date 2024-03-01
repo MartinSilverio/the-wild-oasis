@@ -10,7 +10,7 @@ const DarkModeContext = createContext<TDarkModeContext | undefined>(undefined);
 
 function DarkModeProvider({ children }: { children: ReactNode }) {
     const [isDarkMode, setIsDarkMode] = useLocalStorageState(
-        false,
+        window.matchMedia('(prefers-color-scheme: dark)').matches,
         'isDarkMode'
     );
 

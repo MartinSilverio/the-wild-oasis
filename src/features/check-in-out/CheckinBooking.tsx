@@ -51,7 +51,6 @@ function CheckInBooking() {
         numGuests,
         hasBreakfast,
         numNights,
-        isPaid,
     } = booking;
 
     const optionalBreakfastPrice =
@@ -92,7 +91,6 @@ function CheckInBooking() {
                             setConfirmPaid(false);
                         }}
                         id="breakfast"
-                        // disabled={confirmPaid || isCheckingIn}
                     >
                         Want to add breakfast for{' '}
                         {formatCurrency(optionalBreakfastPrice)}?
