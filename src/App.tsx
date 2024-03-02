@@ -1,10 +1,3 @@
-// import styled from 'styled-components';
-// import GlobalStyles from './styles/GlobalStyles';
-// import Button from './ui/Button';
-// import Input from './ui/Input';
-// import Heading from './ui/Heading';
-// import Row from './ui/Row';
-
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import Bookings from './pages/Bookings';
@@ -23,6 +16,8 @@ import Booking from './pages/Booking';
 import CheckIn from './pages/CheckIn';
 import ProtectedRoute from './ui/ProtectedRoute';
 import { DarkModeProvider } from './context/DarkModeContext';
+import SignUp from './pages/SignUp';
+import SignUpSuccess from './pages/SignUpSuccess';
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -68,6 +63,11 @@ function App() {
                             <Route path="account" element={<Account />} />
                         </Route>
                         <Route path="login" element={<Login />} />
+                        <Route path="signup" element={<SignUp />} />
+                        <Route
+                            path="signup_success"
+                            element={<SignUpSuccess />}
+                        />
                         <Route path="*" element={<PageNotFound />} />
                     </Routes>
                 </BrowserRouter>

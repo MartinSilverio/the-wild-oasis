@@ -1,15 +1,17 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, MouseEvent, useState } from 'react';
 import Button from '../../ui/Button';
 import Form from '../../ui/Form';
 import Input from '../../ui/Input';
 import FormRowVertical from '../../ui/FormRowVertical';
 import { useLogin } from './useLogin';
 import SpinnerMini from '../../ui/SpinnerMini';
+import { useNavigate } from 'react-router-dom';
 
 function LoginForm() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const { login, isLoggingIn } = useLogin();
+    const navigate = useNavigate();
 
     function handleSubmit(e: FormEvent<HTMLFormElement>) {
         e.preventDefault();
@@ -23,6 +25,11 @@ function LoginForm() {
                 },
             }
         );
+    }
+
+    function handleNavigateToSignUp(e: MouseEvent<HTMLButtonElement>) {
+        e.preventDefault();
+        navigate('/signup');
     }
 
     return (
@@ -49,9 +56,19 @@ function LoginForm() {
                 />
             </FormRowVertical>
             <FormRowVertical>
-                <Button size="large" disabled={isLoggingIn}>
-                    {isLoggingIn ? <SpinnerMini /> : `Login`}
-                </Button>
+                <>
+                    <Button size="large" disabled={isLoggingIn}>
+                        {isLoggingIn ? <SpinnerMini /> : `Login`}
+                    </Button>
+                    <Button
+                        size="large"
+                        $variation="secondary"
+                        disabled={isLoggingIn}
+                        onClick={handleNavigateToSignUp}
+                    >
+                        Sign Up
+                    </Button>
+                </>
             </FormRowVertical>
         </Form>
     );

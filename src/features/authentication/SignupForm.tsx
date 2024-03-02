@@ -4,6 +4,9 @@ import Form from '../../ui/Form';
 import FormRow from '../../ui/FormRow';
 import Input from '../../ui/Input';
 import { useSignUp } from './useSignUp';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { MouseEvent } from 'react';
+import FormRowVertical from '../../ui/FormRowVertical';
 
 // Email regex: /\S+@\S+\.\S+/
 
@@ -19,6 +22,11 @@ function SignUpForm() {
         useForm<TLoginForm>();
     const { signUp, isSigningUp } = useSignUp();
     const { errors } = formState;
+    const { pathname } = useLocation();
+    const navigate = useNavigate();
+
+    const atSignUp = pathname === '/signup';
+    const signUpColumns = atSignUp ? '24rem 1fr .5fr' : undefined;
 
     function onSubmit({ fullName, email, password }: TLoginForm) {
         signUp(
@@ -28,14 +36,28 @@ function SignUpForm() {
                 password,
             },
             {
+                onSuccess: () => {
+                    if (atSignUp) {
+                        navigate('/signup_success');
+                    }
+                },
                 onSettled: () => reset(),
             }
         );
     }
 
+    function handleBackToLogin(e: MouseEvent<HTMLButtonElement>) {
+        e.preventDefault();
+        navigate('/login');
+    }
+
     return (
         <Form onSubmit={handleSubmit(onSubmit)}>
-            <FormRow label="Full name" error={errors.fullName?.message}>
+            <FormRow
+                label="Full name"
+                error={errors.fullName?.message}
+                columns={signUpColumns}
+            >
                 <Input
                     type="text"
                     id="fullName"
@@ -46,7 +68,11 @@ function SignUpForm() {
                 />
             </FormRow>
 
-            <FormRow label="Email address" error={errors.email?.message}>
+            <FormRow
+                label="Email address"
+                error={errors.email?.message}
+                columns={signUpColumns}
+            >
                 <Input
                     type="email"
                     id="email"
@@ -64,6 +90,7 @@ function SignUpForm() {
             <FormRow
                 label="Password (min 8 characters)"
                 error={errors.password?.message}
+                columns={signUpColumns}
             >
                 <Input
                     type="password"
@@ -82,6 +109,7 @@ function SignUpForm() {
             <FormRow
                 label="Repeat password"
                 error={errors.passwordConfirm?.message}
+                columns={signUpColumns}
             >
                 <Input
                     type="password"
@@ -96,20 +124,44 @@ function SignUpForm() {
                 />
             </FormRow>
 
-            <FormRow>
+            {atSignUp ? (
                 <>
-                    {/* type is an HTML attribute! */}
-                    <Button
-                        $variation="secondary"
-                        type="reset"
-                        disabled={isSigningUp}
-                        onClick={() => reset()}
-                    >
-                        Cancel
-                    </Button>
-                    <Button disabled={isSigningUp}>Create new user</Button>
+                    <FormRowVertical>
+                        <>
+                            <Button disabled={isSigningUp}>Sign Up</Button>
+
+                            <Button
+                                disabled={isSigningUp}
+                                onClick={handleBackToLogin}
+                                $variation="secondary"
+                            >
+                                Back to Login
+                            </Button>
+                        </>
+                    </FormRowVertical>
+                    <p>
+                        *Note: Since this is supposed to be an app for
+                        employees, normally only another employee can register
+                        another account. But since this is a demo app, a sign up
+                        page was created to see the full app
+                    </p>
                 </>
-            </FormRow>
+            ) : (
+                <FormRow>
+                    <>
+                        {/* type is an HTML attribute! */}
+                        <Button
+                            $variation="secondary"
+                            type="reset"
+                            disabled={isSigningUp}
+                            onClick={() => reset()}
+                        >
+                            Cancel
+                        </Button>
+                        <Button disabled={isSigningUp}>Create new user</Button>
+                    </>
+                </FormRow>
+            )}
         </Form>
     );
 }
